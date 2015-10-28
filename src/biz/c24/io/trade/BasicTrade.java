@@ -11,8 +11,25 @@ import java.util.TimeZone;
  * Time: 01:25
  */
 
-public abstract class BasicTrade implements MutableTrade {
+public abstract class BasicTrade implements biz.c24.io.trade.MutableTrade {
     private static SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+
+    public BasicTrade parse(String line) throws ParseException {
+        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+        String[] fields = line.split(",");
+        setId(Long.parseLong(fields[0]));
+        setTradeDate(sdf.parse(fields[1]));
+        setBuySell(fields[2]);
+        setCurrency1(fields[3]);
+        setAmount1(new BigDecimal(fields[4]));
+        setExchangeRate(Double.parseDouble(fields[5]));
+        setCurrency2(fields[6]);
+        setAmount2(new BigDecimal(fields[7]));
+        setSettlementDate(sdf.parse(fields[8]));
+
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -31,22 +48,5 @@ public abstract class BasicTrade implements MutableTrade {
         sb.append(sdf.format(getSettlementDate()));
 
         return sb.toString();
-    }
-
-    public BasicTrade parse( String line ) throws ParseException {
-        sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-
-        String[] fields = line.split(",");
-        setId(Long.parseLong(fields[0]));
-        setTradeDate(sdf.parse(fields[1]));
-        setBuySell(fields[2]);
-        setCurrency1(fields[3]);
-        setAmount1(new BigDecimal(fields[4]));
-        setExchangeRate(Double.parseDouble(fields[5]));
-        setCurrency2(fields[6]);
-        setAmount2(new BigDecimal(fields[7]));
-        setSettlementDate(sdf.parse(fields[8]));
-
-        return this;
     }
 }

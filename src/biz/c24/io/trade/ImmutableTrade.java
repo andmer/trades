@@ -9,13 +9,20 @@ import java.util.Date;
  * Time: 13:13
  */
 public interface ImmutableTrade {
-    public long getId();
-    public Date getTradeDate();
+    public BigDecimal getAmount1();
+
+    public BigDecimal getAmount2();
+
     public String getBuySell();
     public String getCurrency1();
-    public BigDecimal getAmount1();
-    public double getExchangeRate();
+
     public String getCurrency2();
-    public BigDecimal getAmount2();
+
+    public double getExchangeRate();
+
+    public long getId();
+
     public Date getSettlementDate();
+
+    public Date getTradeDate();
 }

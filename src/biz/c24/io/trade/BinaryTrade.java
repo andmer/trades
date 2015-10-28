@@ -1,8 +1,12 @@
 package biz.c24.io.trade;
 
-import java.io.*;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
 
 /**
  * User: John Davies (John.Davies@C24.biz)
@@ -23,16 +27,11 @@ public class BinaryTrade extends BasicTrade implements Externalizable {
 //    private Date settlementDate;  -->  2
 //    Total                         --> 39
 
+    private static String currencies[] = {"", "AUD", "CAD", "CHF", "EUR", "GBP", "JPY", "USD"};
     private byte[] data;
-
-    private static String currencies[] = { "", "AUD", "CAD", "CHF", "EUR", "GBP", "JPY", "USD" };
 
     public BinaryTrade() {
         data = new byte[39];
-    }
-
-    public byte[] getData() {
-        return data;
     }
 
     public BinaryTrade( byte[] data ) {
@@ -40,29 +39,49 @@ public class BinaryTrade extends BasicTrade implements Externalizable {
     }
 
     @Override
-    public void setId( long id) {
-        long2BytesFromOffset(id, 0);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BinaryTrade)) {
+            return false;
+        }
+
+        BinaryTrade that = (BinaryTrade) o;
+
+        if (!Arrays.equals(data, that.data)) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
-    public long getId() {
-        return longFromBytesFromOffset(0);
+    public BigDecimal getAmount1() {
+        long value = longFromBytesFromOffset(12);
+        BigDecimal bigDecimal = new BigDecimal(value);
+        return bigDecimal.divide(new BigDecimal(100));
     }
 
     @Override
-    public Date getTradeDate() {
-        long date = wordFromBytesFromOffset(8);
-        date *= 86_400_000L; // milliseconds in a day
-        return new Date(date);
+    public void setAmount1(BigDecimal amount1) {
+        BigDecimal times100 = amount1.multiply(new BigDecimal(100));
+        long value = times100.longValue();
+        long2BytesFromOffset(value, 12);
     }
 
     @Override
-    public void setTradeDate(Date tradeDate) {
-        long date = tradeDate.getTime();
-        date /= 86_400_000L; // milliseconds in a day
+    public BigDecimal getAmount2() {
+        long value = longFromBytesFromOffset(29);
+        BigDecimal bigDecimal = new BigDecimal(value);
+        return bigDecimal.divide(new BigDecimal(100));
+    }
 
-        data[8] = (byte)(date >>> 8);
-        data[9] = (byte)(date);
+    @Override
+    public void setAmount2(BigDecimal amount2) {
+        BigDecimal times100 = amount2.multiply(new BigDecimal(100));
+        long value = times100.longValue();
+        long2BytesFromOffset(value, 29);
     }
 
     @Override
@@ -91,17 +110,23 @@ public class BinaryTrade extends BasicTrade implements Externalizable {
     }
 
     @Override
-    public BigDecimal getAmount1() {
-        long value = longFromBytesFromOffset(12);
-        BigDecimal bigDecimal = new BigDecimal(value);
-        return bigDecimal.divide(new BigDecimal(100));
+    public String getCurrency2() {
+        return currencies[data[28]];
     }
 
     @Override
-    public void setAmount1(BigDecimal amount1) {
-        BigDecimal times100 = amount1.multiply(new BigDecimal(100));
-        long value = times100.longValue();
-        long2BytesFromOffset(value, 12);
+    public void setCurrency2(String currency1) {
+        data[28] = 0;
+        for (int i = 0; i < currencies.length; i++) {
+            if (currency1.equals(currencies[i])) {
+                data[28] = (byte) i;
+                return;
+            }
+        }
+    }
+
+    public byte[] getData() {
+        return data;
     }
 
     @Override
@@ -118,32 +143,13 @@ public class BinaryTrade extends BasicTrade implements Externalizable {
     }
 
     @Override
-    public String getCurrency2() {
-        return currencies[data[28]];
+    public long getId() {
+        return longFromBytesFromOffset(0);
     }
 
     @Override
-    public void setCurrency2(String currency1) {
-        data[28] = 0;
-        for(int i = 0; i < currencies.length; i++)
-            if( currency1.equals(currencies[i])) {
-                data[28] = (byte) i;
-                return;
-            }
-    }
-
-    @Override
-    public BigDecimal getAmount2() {
-        long value = longFromBytesFromOffset(29);
-        BigDecimal bigDecimal = new BigDecimal(value);
-        return bigDecimal.divide(new BigDecimal(100));
-    }
-
-    @Override
-    public void setAmount2(BigDecimal amount2) {
-        BigDecimal times100 = amount2.multiply(new BigDecimal(100));
-        long value = times100.longValue();
-        long2BytesFromOffset(value, 29);
+    public void setId(long id) {
+        long2BytesFromOffset(id, 0);
     }
 
     @Override
@@ -163,25 +169,19 @@ public class BinaryTrade extends BasicTrade implements Externalizable {
     }
 
     @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.write(data);
+    public Date getTradeDate() {
+        long date = wordFromBytesFromOffset(8);
+        date *= 86_400_000L; // milliseconds in a day
+        return new Date(date);
     }
 
     @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        in.read(data);
-    }
+    public void setTradeDate(Date tradeDate) {
+        long date = tradeDate.getTime();
+        date /= 86_400_000L; // milliseconds in a day
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof BinaryTrade)) return false;
-
-        BinaryTrade that = (BinaryTrade) o;
-
-        if (!Arrays.equals(data, that.data)) return false;
-
-        return true;
+        data[8] = (byte) (date >>> 8);
+        data[9] = (byte) (date);
     }
 
     private void long2BytesFromOffset(long value, int offset) {
@@ -202,10 +202,20 @@ public class BinaryTrade extends BasicTrade implements Externalizable {
         return val;
     }
 
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        in.read(data);
+    }
+
     private long wordFromBytesFromOffset( int offset ) {
         long val = 0;
         for (int i = 0; i < 2; i++)
             val  = (val << 8) + (data[offset+i] & 0xff);
         return val;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.write(data);
     }
 }
